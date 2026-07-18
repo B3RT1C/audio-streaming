@@ -9,10 +9,10 @@ Primera versión usable del ecosistema **audio-streaming**.
 
 ## Backend
 
-- `GET /song` — listar metadata
-- `GET /song/file?id=` — streaming con HTTP Range
-- `POST /song/file` — subir MP3
-- `DELETE /song?id=` — borrar metadata + fichero
+- `GET /audios` — listar metadata
+- `GET /audios/{id}` — streaming con HTTP Range
+- `POST /audios` — subir MP3
+- `DELETE /audios/{id}` — borrar metadata + fichero
 - `contentHash` (SHA-256) en cada pista
 - Seed con hashes; secuencia de IDs sincronizada tras el seed
 - Conflicto 409 si el nombre ya existe
@@ -30,7 +30,7 @@ Primera versión usable del ecosistema **audio-streaming**.
 ## Ops
 
 - Repos: `audio-streaming`, `audio-streaming-backend`, `audio-streaming-web`
-- Jenkins en LAN con Poll SCM y staging (ver [jenkins-deploy-report.md](./jenkins-deploy-report.md))
+- Jenkins en LAN con Poll SCM y staging (ver [jenkins-ci-cd.md](./jenkins-ci-cd.md))
 
 ## Fuera de esta versión
 

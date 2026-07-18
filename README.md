@@ -29,9 +29,10 @@ No hay paquete `shared`. El contrato público es la API HTTP del backend:
 - [Notas de versión v0.1.0](./RELEASE_v0.1.0.md)
 - [Roadmap futuro](./roadmap.md) — desktop / mobile / mini-back / sync (**fuera de v0.1.0**)
 - [CI/CD con Jenkins](./jenkins-ci-cd.md)
-- [Informe de despliegue Jenkins](./jenkins-deploy-report.md)
 
 ## Cómo clonar el ecosistema
+
+En local conviene tener los repos hermanos en la misma carpeta (workspace):
 
 ```bash
 mkdir audio-streaming && cd audio-streaming
@@ -40,13 +41,16 @@ git clone https://github.com/B3RT1C/audio-streaming-backend.git
 git clone https://github.com/B3RT1C/audio-streaming-web.git
 ```
 
-Para Postgres local (si tienes el `docker-compose.yml` del workspace):
-
-```bash
-docker compose up -d
+```
+audio-streaming/                 ← carpeta local (no es un repo)
+├── audio-streaming/             → docs (este repo)
+├── audio-streaming-backend/     → API + OpenAPI
+└── audio-streaming-web/         → cliente web
 ```
 
 ## Arranque local
+
+Necesitas PostgreSQL en `localhost:5432` (DB `music-streaming-db`, user/pass `postgres` por defecto). En el servidor de staging eso va por WSL; en desarrollo, el Postgres que tengas instalado.
 
 ```bash
 cd audio-streaming-backend && ./mvnw spring-boot:run
@@ -57,7 +61,7 @@ cd audio-streaming-web && npm install && npm start
 - API: `http://localhost:8080`
 - Web: `http://localhost:4200`
 
-Variables de BBDD opcionales: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`.
+Variables opcionales: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` (ver README del [backend](https://github.com/B3RT1C/audio-streaming-backend)).
 
 Más detalle: READMEs de [backend](https://github.com/B3RT1C/audio-streaming-backend) y [web](https://github.com/B3RT1C/audio-streaming-web).
 
@@ -68,6 +72,8 @@ Alcance cerrado: **solo backend + web**, mergeado en `main` de cada repo.
 - [x] Backend: listar / subir / borrar / stream (HTTP Range) + `contentHash`
 - [x] Web: biblioteca, controles, upload, delete, estados y errores
 - [x] OpenAPI en el backend
-- [x] CI/CD Jenkins con staging (API :8080, web :8083)
+- [x] CI/CD Jenkins (Poll SCM): tests → integration → staging  
+  LAN: Jenkins `:8081`, API staging `:8080/audios`, web staging `:8083`  
+  Detalle: [jenkins-ci-cd.md](./jenkins-ci-cd.md)
 
 Fuera de v0.1.0 (ver [roadmap.md](./roadmap.md)): desktop, mobile, mini-back local, sync.

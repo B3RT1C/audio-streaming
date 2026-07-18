@@ -1,261 +1,115 @@
 # Integración CI/CD con Jenkins
 
-Documento de diseño para automatizar build, tests y despliegue del ecosistema **audio-streaming**, desplegado en un Jenkins propio en la red local.
+Diseño y operación del CI/CD del ecosistema **audio-streaming** en Jenkins on-prem (LAN).
 
 ## 1. Objetivo
 
-Al hacer push (o merge) a la rama de producción de cada repositorio:
+Al hacer push a **`main`** (o a una rama `feat/*` / `fix/*`):
 
-1. Descargar los cambios.
-2. Compilar.
-3. Ejecutar tests unitarios / de contrato.
-4. Desplegar solo si todo pasa en verde.
+1. Detectar el cambio (Multibranch scan ~cada 5 min).
+2. Validar contrato OpenAPI + tests del repo.
+3. En **`main`**: smoke de integración → deploy staging → smoke staging.
+4. En **tags `v*`**: build + archive (sin deploy).
 
-Además, cuando cambie el **backend**, detectar roturas en **web** con **pruebas conjuntas** antes de promover a producción. Desktop/mobile quedan fuera de v0.1.0 (fase posterior).
+No hay producción automatizada todavía. Desktop/mobile quedan fuera de v0.1.0.
 
-## 2. Contexto del proyecto
+## 2. Acceso e infraestructura
 
-El producto está partido en varios repos/carpetas:
+| Servicio | Detalle |
+|----------|---------|
+| Host | `192.168.1.79` (usuario Windows `b3-ml`) |
+| Jenkins | http://192.168.1.79:8081/ |
+| Staging API | http://192.168.1.79:8080/audios |
+| Staging Web | http://192.168.1.79:8083/ |
+| RDP / SSH | `:3389` / `b3-ml@192.168.1.79:22` |
+| Agente | JDK 26 (builds), Temurin 21 (Jenkins), Maven 3.9, Node 24, Git |
+| BD | PostgreSQL en WSL Ubuntu (`127.0.0.1:5432`, red espejo) |
+| Trigger | Multibranch Git scan `5m` (sin webhooks ni túnel) |
+
+Credenciales de Jenkins: **no van en este repo**.
+
+La raíz `/` de la API responde 404; el listado es **`/audios`**.
+
+## 3. Repos
 
 | Carpeta local | Repo remoto | Rol |
 |---------------|-------------|-----|
-| `audio-streaming-backend` | [B3RT1C/audio-streaming-backend](https://github.com/B3RT1C/audio-streaming-backend) | API central (Java / Spring Boot) + OpenAPI |
-| `audio-streaming-web` | [B3RT1C/audio-streaming-web](https://github.com/B3RT1C/audio-streaming-web) | Cliente web (Angular) |
-| `audio-streaming-desktop` | pendiente | Cliente desktop |
-| `audio-streaming-mobile` | pendiente | Cliente mobile |
-| `audio-streaming` | [B3RT1C/audio-streaming](https://github.com/B3RT1C/audio-streaming) | Docs, roadmap, estado |
+| `audio-streaming-backend` | [B3RT1C/audio-streaming-backend](https://github.com/B3RT1C/audio-streaming-backend) | API + OpenAPI |
+| `audio-streaming-web` | [B3RT1C/audio-streaming-web](https://github.com/B3RT1C/audio-streaming-web) | Cliente Angular |
+| `audio-streaming` | [B3RT1C/audio-streaming](https://github.com/B3RT1C/audio-streaming) | Docs |
 
-El back es la fuente de verdad. Los fronts consumen el mismo contrato HTTP (`GET/POST/DELETE /song`, streaming con HTTP Range), documentado en el OpenAPI del backend: [docs/openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml). Ver [arquitectura.md](./arquitectura.md).
+Contrato: [docs/openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml).
 
-## 3. Infraestructura prevista
+## 4. Jobs (carpeta `audio-streaming/`)
 
-| Elemento | Detalle |
-|----------|---------|
-| Máquina Jenkins | `192.168.1.79` (RDP **3389**, SSH **22**, usuario `b3-ml`) |
-| UI Jenkins | **http://192.168.1.79:8081/** (desplegado; no usar **8080**) |
-| Requisitos en el agente | JDK 26 (builds), Temurin 21 (servicio Jenkins), Maven 3.9, Node 24, Git — instalados. PostgreSQL CI pendiente |
-| Disponibilidad | La PC debe permanecer encendida y estable; si se apaga, no hay CI/CD |
+| Job | Tipo | Qué hace |
+|-----|------|----------|
+| `backend` | Multibranch | Contract + test + package; en `main` → integration → deploy API → staging-smoke; en `v*` → archive |
+| `web` | Multibranch | Contract + test + build; en `main` → integration → deploy web → staging-smoke; en `v*` → archive |
+| `integration` | Pipeline | Smoke API temporal en **:8082** + Postgres |
+| `deploy-staging` | Pipeline | API staging **:8080** |
+| `deploy-staging-web` | Pipeline | Front staging **:8083** |
+| `staging-smoke` | Pipeline | E2E ligero: `GET /audios` + web `/` |
 
-RDP (`3389`) y Jenkins son servicios distintos. Estado del despliegue: [jenkins-deploy-report.md](./jenkins-deploy-report.md).
-
-Notas de red:
-
-- En LAN, Jenkins es alcanzable por IP interna.
-- Trigger actual: **Poll SCM** (`H/2 * * * *`) — Jenkins consulta GitHub cada ~2 min. No hace falta túnel ni webhooks.
-- Si en el futuro se quieren webhooks (build al instante), haría falta un túnel o IP pública.
-
-## 4. Principio de diseño: un pipeline por repo
-
-No existe un único job “del proyecto audio”. Cada cambio dispara **solo el pipeline del repo afectado**:
-
-En **v0.1.0** solo existen pipelines de backend y web:
-
-```mermaid
-flowchart LR
-  pushBack[Push backend] --> jobBack[Job backend]
-  pushWeb[Push web] --> jobWeb[Job web]
-  jobBack --> contract[Contract check]
-  jobBack --> stagingDeploy[Deploy staging]
-  stagingDeploy --> integration[Job integración conjunta]
-  integration --> prodGate[Gate a producción]
-```
-
-| Job | Trigger | Responsabilidad |
-|-----|---------|-----------------|
-| `audio-streaming/backend` | Push a `main` / `prod` (o PR) | `mvn test` → empaquetar → deploy API |
-| `audio-streaming/web` | Push a `main` / `prod` | `npm test` / build → deploy estático o contenedor |
-| `audio-streaming/integration` | Tras deploy de back (o web) a **staging** | Smoke / e2e back + web |
-
-Desktop/mobile (fuera de v0.1.0): jobs propios cuando existan esos clientes.
-
-## 5. El problema multi-repo: roturas cruzadas
-
-Si el backend se despliega solo con sus tests unitarios, puede romper la web sin que el job del back lo detecte.
-
-Solución en tres capas:
-
-### 5.1 Contract tests (barato, siempre)
-
-- El contrato vive en el **backend** (`docs/openapi.yaml`).
-- El job del **backend** valida que la API implementada sigue el contrato.
-- El job de cada **cliente** valida que consume el mismo contrato (cliente generado, tests de esquema, o asserts sobre paths/métodos).
-
-Si hay un breaking change incompatible, falla **antes** del deploy a producción, sin necesidad de levantar emuladores mobile en cada commit.
-
-### 5.2 Entorno de staging compartido
-
-Flujo recomendado:
+Ramas descubiertas: `main`, `feat/*`, `feature/*`, `fix/*`, tags `v*`.
 
 ```
-cambio en backend
-  → unit + contract
-  → deploy a STAGING
-  → job de integración (back + web)
-  → si verde → deploy a PRODUCCIÓN
+push feat/*     → contract + tests (+ build)     [sin deploy]
+push main       → … → integration → deploy → staging-smoke
+tag v0.x.y      → contract + tests + archive     [sin deploy]
 ```
 
-Staging debe ser lo más parecido posible a prod (misma imagen Docker, misma BD de prueba, mismas variables salvo secretos).
+## 5. Contract tests
 
-### 5.3 Job de integración conjunta
+- Backend: `node scripts/ci/check-openapi-contract.mjs` — OpenAPI v0.1 (`/audios`, `/audios/{id}`) vs `AudioController`.
+- Web: `node scripts/ci/check-api-contract.mjs` — `API_PATHS` vs contrato `/audios`.
 
-Pipeline `audio-streaming/integration` que:
+## 6. Operación en el servidor
 
-1. Clona (o reutiliza artefactos de) `backend` + `web`.
-2. Levanta dependencias con Docker Compose (PostgreSQL, y opcionalmente el back).
-3. Arranca API en staging / local CI.
-4. Apunta el front de tests a esa API.
-5. Ejecuta **smoke / e2e** de flujos críticos:
-   - listar canciones
-   - subir MP3
-   - reproducir con Range
-   - borrar canción
-6. Falla el pipeline si cualquier smoke falla → **no promover a prod**.
+Scripts (`C:\Users\b3-ml\jenkins-scripts\`):
 
-Desktop y mobile no entran en v0.1.0; cuando existan, empezar con smoke manual o nightly contra staging.
+- `deploy-staging.ps1` / `start-staging-api.ps1`
+- `deploy-staging-web.ps1`
+- `ensure-staging.ps1`
+- `start-api-smoke.ps1`
+- `smoke-staging.ps1`
 
-## 6. Organización en Jenkins
+Tareas: `Start-WSL-Postgres`, `Ensure-MusicStreaming-Staging`, `Run-MusicStreaming-StagingAPI`.
 
-Estructura de carpetas sugerida:
+Workspaces Multibranch: `audio-streaming_backend_main`, `audio-streaming_web_main`, etc.
 
-```
-audio-streaming/
-├── backend
-├── web
-├── desktop          # futuro
-├── mobile           # futuro
-└── integration
-```
+## 7. Tags
 
-Convenciones:
+- Ejemplo publicado: `v0.1.0` en backend y web.
+- Crear: `git tag -a v0.x.y -m '...' && git push origin v0.x.y`
+- Jenkins indexa el tag; el pipeline archiva artefactos y **no** despliega staging.
 
-- Credenciales (SSH, tokens GitHub, claves de deploy) solo en **Jenkins Credentials**, nunca en el repo.
-- Cada job versionado con `Jenkinsfile` en su propio repositorio (Pipeline as Code).
-- El job `integration` puede vivir en el repo general `audio-streaming` o en un repo `audio-streaming-ci` dedicado.
+## 8. Fases
 
-### Esqueleto de flujo backend (`Jenkinsfile`)
+### Hecho
 
-```groovy
-pipeline {
-  agent any
-  stages {
-    stage('Checkout') { steps { checkout scm } }
-    stage('Test') {
-      steps { sh './mvnw -B test' }
-    }
-    stage('Contract') {
-      steps { sh './mvnw -B verify -Pcontract' } // o script OpenAPI
-    }
-    stage('Package') {
-      steps { sh './mvnw -B -DskipTests package' }
-    }
-    stage('Deploy staging') {
-      when { branch 'main' } // o prod, según convención
-      steps { sh './scripts/deploy-staging.sh' }
-    }
-    stage('Trigger integration') {
-      when { branch 'main' }
-      steps {
-        build job: 'audio-streaming/integration', wait: true
-      }
-    }
-    stage('Deploy production') {
-      when { branch 'main' }
-      steps { sh './scripts/deploy-prod.sh' }
-    }
-  }
-}
-```
+- [x] Carpeta Jenkins `audio-streaming/` (antes `music-streaming/`)
+- [x] Multibranch `backend` / `web` (main + feat/fix + tags)
+- [x] Contract tests OpenAPI / API_PATHS
+- [x] Integration smoke `:8082` + staging-smoke API+web
+- [x] Deploy staging solo desde `main`
+- [x] Tags `v*` con archive (sin deploy)
 
-El detalle de scripts de deploy depende de dónde corra la API (misma máquina, otro host, Docker). Lo importante es el **orden**: staging → integración → prod.
+### Más adelante
 
-### Esqueleto de integración
-
-```groovy
-pipeline {
-  agent any
-  stages {
-    stage('Compose up') {
-      steps { sh 'docker compose -f docker-compose.ci.yml up -d --wait' }
-    }
-    stage('Start API') {
-      steps { sh './scripts/ci-start-backend.sh' }
-    }
-    stage('E2E web') {
-      steps {
-        dir('audio-streaming-web') {
-          sh 'npm ci && npm run e2e:ci'
-        }
-      }
-    }
-  }
-  post {
-    always { sh 'docker compose -f docker-compose.ci.yml down -v || true' }
-  }
-}
-```
-
-## 7. Ramas y promoción
-
-| Rama / entorno | Uso |
-|----------------|-----|
-| feature / PR | Build + tests; sin deploy a prod |
-| `main` o `develop` → **staging** | Deploy automático a staging + integración |
-| promoción a **prod** | Solo si integración verde (automática o botón manual “Promote”) |
-
-Orden de despliegue cuando el contrato cambia:
-
-1. Backend (compatible hacia atrás si es posible).
-2. Clientes (web, luego desktop/mobile).
-
-Si el cambio es **breaking**, versionar API (`/v2`) o coordinar release etiquetado (`backend vX requiere web ≥ Y`).
-
-## 8. Qué automatizar por fase
-
-### Fase 1 (back + web) — hecha
-
-- [x] Jenkins en `192.168.1.79:8081`
-- [x] Jobs `backend` / `web` con `Jenkinsfile` en SCM
-- [x] Job `integration` (smoke API + Postgres WSL)
-- [x] Job `deploy-staging` (API en `:8080`)
-- [x] Poll SCM en `backend` / `web` (`H/2 * * * *`); webhooks y túnel retirados
-- [x] Flujo: tests → `integration` → deploy staging (API `:8080`, web `:8083`)
-
-### Fase 2
-
-- [ ] (Opcional) Webhooks + túnel nombrado si se quiere build al instante
-- [x] Encadenar backend/web → integration → deploy staging
-- [x] Servir front web de staging (`:8083`)
+- [ ] Deploy a producción (definir dónde vive prod)
 - [ ] Notificaciones en rojo
-- [ ] Artefactos versionados (tags `v0.x.y`)
+- [ ] Auto-build de tags al descubrirlos (hoy se puede lanzar el job del tag a mano tras el scan)
+- [ ] Desktop / mobile CI → [roadmap.md](./roadmap.md)
 
-### Fase 3 (desktop / mobile)
+## 9. Limitaciones
 
-- [ ] Jobs de build específicos (SDK Android, firmas, etc.).
-- [ ] Nightly de smoke contra staging.
-- [ ] Integración completa solo en releases, no en cada commit del back.
+- Scan Multibranch: hasta ~5 min tras el push (o “Scan Multibranch Pipeline Now”).
+- Si WSL/Postgres se duerme, `/audios` puede fallar hasta `ensure-staging` / redeploy.
+- Integration es smoke de API; staging-smoke cubre front HTTP básico, no e2e de UI completo.
 
-## 9. Alternativas y cuándo quedarse con Jenkins
+## Referencias
 
-Jenkins encaja si se quiere **todo on-prem** en esta PC, un único panel para varios repos y control total de agentes.
-
-Si el mantenimiento pesa más que el control local, **GitHub Actions** por repo (más un workflow reutilizable de integración) es una alternativa válida con el mismo diseño lógico (pipeline por repo + job conjunto + staging).
-
-La arquitectura de pruebas (contrato + staging + integración) **no depende** de Jenkins; solo cambia el orquestador.
-
-## 10. Resumen
-
-| Pregunta | Respuesta |
-|----------|-----------|
-| ¿Tiene sentido Jenkins al committear a prod? | Sí: build → test → deploy automático. |
-| ¿Un solo job para todo el monorepo lógico? | No: un job por repo + uno de integración. |
-| ¿Se pueden hacer pruebas conjuntas? | Sí: contract tests + staging + e2e multi-repo. |
-| ¿Por dónde empezar? | Backend + web; desktop/mobile después. |
-| ¿Puerto 3389? | RDP. Jenkins en **8081** (ya desplegado); **8080** es la API. |
-
-## Referencias internas
-
-- [arquitectura.md](./arquitectura.md) — visión back + web (v0.1.0)
-- [roadmap.md](./roadmap.md) — desktop / mobile / mini-back / sync (futuro)
-- [README de este repo](./README.md) — docs, estado y enlaces a repos
-- [OpenAPI del backend](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml) — contrato HTTP
-- Resumen: puerto **3389** = RDP; Jenkins ≠ **8080** (reservado a la API).
+- [arquitectura.md](./arquitectura.md)
+- [roadmap.md](./roadmap.md)
+- [README](./README.md)
