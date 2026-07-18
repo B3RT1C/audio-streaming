@@ -25,24 +25,24 @@ El producto está partido en varios repos/carpetas:
 | `audio-streaming-mobile` | pendiente | Cliente mobile |
 | `audio-streaming` | [B3RT1C/audio-streaming](https://github.com/B3RT1C/audio-streaming) | Docs, roadmap, estado |
 
-El back es la fuente de verdad. Los fronts consumen el mismo contrato HTTP (`GET/POST/DELETE /song`, streaming con HTTP Range), documentado en [openapi.yaml](./openapi.yaml). Ver [arquitectura.md](./arquitectura.md).
+El back es la fuente de verdad. Los fronts consumen el mismo contrato HTTP (`GET/POST/DELETE /song`, streaming con HTTP Range), documentado en el OpenAPI del backend: [docs/openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml). Ver [arquitectura.md](./arquitectura.md).
 
 ## 3. Infraestructura prevista
 
 | Elemento | Detalle |
 |----------|---------|
-| Máquina Jenkins | `192.168.1.79` (acceso RDP en puerto **3389**) |
-| UI Jenkins | Puerto propio, p. ej. **8081** (no usar **8080**: ese lo usa el backend en local/staging) |
-| Requisitos en el agente | JDK 25, Maven 3.9+, Node 24+, npm 11+, Docker (PostgreSQL / Compose) |
+| Máquina Jenkins | `192.168.1.79` (RDP **3389**, SSH **22**, usuario `b3-ml`) |
+| UI Jenkins | **http://192.168.1.79:8081/** (desplegado; no usar **8080**) |
+| Requisitos en el agente | JDK 26 (builds), Temurin 21 (servicio Jenkins), Maven 3.9, Node 24, Git — instalados. PostgreSQL CI pendiente |
 | Disponibilidad | La PC debe permanecer encendida y estable; si se apaga, no hay CI/CD |
 
-RDP (`3389`) y Jenkins son servicios distintos. La API Spring Boot documentada en el workspace escucha en `8080`; Jenkins debe ir en **otro** puerto para no chocar.
+RDP (`3389`) y Jenkins son servicios distintos. Estado del despliegue: [jenkins-deploy-report.md](./jenkins-deploy-report.md).
 
 Notas de red:
 
 - En LAN, Jenkins es alcanzable por IP interna.
-- Si los repos están en GitHub y se quieren **webhooks**, hace falta túnel (Cloudflare Tunnel, ngrok) o un agente que **haga polling** / use GitHub App self-hosted runner equivalente.
-- Alternativa simple al inicio: **poll SCM** cada pocos minutos (menos elegante, sin exponer la red).
+- Trigger actual: **Poll SCM** (`H/2 * * * *`) — Jenkins consulta GitHub cada ~2 min. No hace falta túnel ni webhooks.
+- Si en el futuro se quieren webhooks (build al instante), haría falta un túnel o IP pública.
 
 ## 4. Principio de diseño: un pipeline por repo
 
@@ -211,20 +211,22 @@ Si el cambio es **breaking**, versionar API (`/v2`) o coordinar release etiqueta
 
 ## 8. Qué automatizar por fase
 
-### Fase 1 (ahora: back + web)
+### Fase 1 (back + web) — hecha
 
-- [ ] Instalar Jenkins en `192.168.1.79` (Java, Docker plugin, credentials).
-- [ ] Job `backend`: test + package.
-- [ ] Job `web`: install + test + build.
-- [ ] Contract check usando [openapi.yaml](./openapi.yaml).
-- [ ] Staging + job `integration` (smoke API + e2e web mínimos).
-- [ ] Deploy a prod condicionado al verde de integración.
+- [x] Jenkins en `192.168.1.79:8081`
+- [x] Jobs `backend` / `web` con `Jenkinsfile` en SCM
+- [x] Job `integration` (smoke API + Postgres WSL)
+- [x] Job `deploy-staging` (API en `:8080`)
+- [x] Poll SCM en `backend` / `web` (`H/2 * * * *`); webhooks y túnel retirados
+- [x] Flujo: tests → `integration` → deploy staging (API `:8080`, web `:8083`)
 
 ### Fase 2
 
-- [ ] Webhooks o túnel estable desde GitHub.
-- [ ] Notificaciones (email / Discord / Slack) en rojo.
-- [ ] Artefactos versionados (tags `v0.x.y`).
+- [ ] (Opcional) Webhooks + túnel nombrado si se quiere build al instante
+- [x] Encadenar backend/web → integration → deploy staging
+- [x] Servir front web de staging (`:8083`)
+- [ ] Notificaciones en rojo
+- [ ] Artefactos versionados (tags `v0.x.y`)
 
 ### Fase 3 (desktop / mobile)
 
@@ -248,12 +250,12 @@ La arquitectura de pruebas (contrato + staging + integración) **no depende** de
 | ¿Un solo job para todo el monorepo lógico? | No: un job por repo + uno de integración. |
 | ¿Se pueden hacer pruebas conjuntas? | Sí: contract tests + staging + e2e multi-repo. |
 | ¿Por dónde empezar? | Backend + web; desktop/mobile después. |
-| ¿Puerto 3389? | RDP de la máquina. Jenkins en otro puerto (p. ej. **8081**); **8080** es la API. |
+| ¿Puerto 3389? | RDP. Jenkins en **8081** (ya desplegado); **8080** es la API. |
 
 ## Referencias internas
 
 - [arquitectura.md](./arquitectura.md) — visión back + web (v0.1.0)
 - [roadmap.md](./roadmap.md) — desktop / mobile / mini-back / sync (futuro)
 - [README de este repo](./README.md) — docs, estado y enlaces a repos
-- [OpenAPI del backend](./openapi.yaml) — contrato HTTP
+- [OpenAPI del backend](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml) — contrato HTTP
 - Resumen: puerto **3389** = RDP; Jenkins ≠ **8080** (reservado a la API).

@@ -1,8 +1,10 @@
 # Roadmap (posterior a v0.1.0)
 
-**Fuera del alcance de v0.1.0.** La versión inicial es solo backend + web.
+**Fuera del alcance de v0.1.0.** La versión inicial es solo backend + web (ver [RELEASE_v0.1.0.md](./RELEASE_v0.1.0.md)).
 
-El contrato HTTP ya está documentado en [openapi.yaml](./openapi.yaml).
+El contrato HTTP está en el backend:
+
+[docs/openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml)
 
 ## Objetivo a futuro
 

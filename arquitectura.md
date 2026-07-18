@@ -13,7 +13,11 @@ flowchart LR
   centralBack --> files[MP3 storage]
 ```
 
-El contrato HTTP está documentado en [openapi.yaml](./openapi.yaml). No hay paquete shared.
+El contrato HTTP (fuente de verdad) está en el backend:
+
+[docs/openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml)
+
+No hay paquete shared.
 
 ## Responsabilidades (v0.1.0)
 
