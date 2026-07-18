@@ -13,7 +13,7 @@ flowchart LR
   centralBack --> files[MP3 storage]
 ```
 
-El contrato HTTP vive en el backend: [openapi.yaml](./openapi.yaml). No hay paquete shared.
+El contrato HTTP está documentado en [openapi.yaml](./openapi.yaml). No hay paquete shared.
 
 ## Responsabilidades (v0.1.0)
 

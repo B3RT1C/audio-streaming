@@ -26,7 +26,7 @@ No hay paquete `shared`. El contrato público es la API HTTP del backend ([OpenA
 - [Arquitectura](./arquitectura.md) — arquitectura de v0.1.0 (back + web)
 - [Roadmap futuro](./roadmap.md) — desktop / mobile / mini-back / sync (**fuera de v0.1.0**)
 - [CI/CD con Jenkins](./jenkins-ci-cd.md)
-- Contrato API: [openapi.yaml](./openapi.yaml) (en el repo backend)
+- Contrato API: [openapi.yaml](./openapi.yaml)
 
 ## Arranque local (workspace multi-carpeta)
 
