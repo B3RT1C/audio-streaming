@@ -1,6 +1,6 @@
 # Integración CI/CD con Jenkins
 
-Documento de diseño para automatizar build, tests y despliegue del ecosistema **music-streaming** (`audio-streaming-*` en este workspace), desplegado en un Jenkins propio en la red local.
+Documento de diseño para automatizar build, tests y despliegue del ecosistema **audio-streaming**, desplegado en un Jenkins propio en la red local.
 
 ## 1. Objetivo
 
@@ -19,13 +19,13 @@ El producto está partido en varios repos/carpetas:
 
 | Carpeta local | Repo remoto | Rol |
 |---------------|-------------|-----|
-| `audio-streaming-backend` | `B3RT1C/music-streaming-backend` | API central (Java / Spring Boot) + OpenAPI |
-| `audio-streaming-web` | `B3RT1C/music-streaming-web` | Cliente web (Angular) |
+| `audio-streaming-backend` | [B3RT1C/audio-streaming-backend](https://github.com/B3RT1C/audio-streaming-backend) | API central (Java / Spring Boot) + OpenAPI |
+| `audio-streaming-web` | [B3RT1C/audio-streaming-web](https://github.com/B3RT1C/audio-streaming-web) | Cliente web (Angular) |
 | `audio-streaming-desktop` | pendiente | Cliente desktop |
 | `audio-streaming-mobile` | pendiente | Cliente mobile |
-| `audio-streaming` | repo general | Docs, roadmap, estado |
+| `audio-streaming` | [B3RT1C/audio-streaming](https://github.com/B3RT1C/audio-streaming) | Docs, roadmap, estado |
 
-El back es la fuente de verdad. Los fronts consumen el mismo contrato HTTP (`GET/POST/DELETE /song`, streaming con HTTP Range), documentado en `audio-streaming-backend/docs/openapi.yaml`. Ver [arquitectura.md](./arquitectura.md).
+El back es la fuente de verdad. Los fronts consumen el mismo contrato HTTP (`GET/POST/DELETE /song`, streaming con HTTP Range), documentado en [openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml). Ver [arquitectura.md](./arquitectura.md).
 
 ## 3. Infraestructura prevista
 
@@ -62,9 +62,9 @@ flowchart LR
 
 | Job | Trigger | Responsabilidad |
 |-----|---------|-----------------|
-| `music-streaming/backend` | Push a `main` / `prod` (o PR) | `mvn test` → empaquetar → deploy API |
-| `music-streaming/web` | Push a `main` / `prod` | `npm test` / build → deploy estático o contenedor |
-| `music-streaming/integration` | Tras deploy de back (o web) a **staging** | Smoke / e2e back + web |
+| `audio-streaming/backend` | Push a `main` / `prod` (o PR) | `mvn test` → empaquetar → deploy API |
+| `audio-streaming/web` | Push a `main` / `prod` | `npm test` / build → deploy estático o contenedor |
+| `audio-streaming/integration` | Tras deploy de back (o web) a **staging** | Smoke / e2e back + web |
 
 Desktop/mobile (fuera de v0.1.0): jobs propios cuando existan esos clientes.
 
@@ -98,7 +98,7 @@ Staging debe ser lo más parecido posible a prod (misma imagen Docker, misma BD 
 
 ### 5.3 Job de integración conjunta
 
-Pipeline `music-streaming/integration` que:
+Pipeline `audio-streaming/integration` que:
 
 1. Clona (o reutiliza artefactos de) `backend` + `web`.
 2. Levanta dependencias con Docker Compose (PostgreSQL, y opcionalmente el back).
@@ -118,7 +118,7 @@ Desktop y mobile no entran en v0.1.0; cuando existan, empezar con smoke manual o
 Estructura de carpetas sugerida:
 
 ```
-music-streaming/
+audio-streaming/
 ├── backend
 ├── web
 ├── desktop          # futuro
@@ -130,7 +130,7 @@ Convenciones:
 
 - Credenciales (SSH, tokens GitHub, claves de deploy) solo en **Jenkins Credentials**, nunca en el repo.
 - Cada job versionado con `Jenkinsfile` en su propio repositorio (Pipeline as Code).
-- El job `integration` puede vivir en el repo general `audio-streaming` o en un repo `music-streaming-ci` dedicado.
+- El job `integration` puede vivir en el repo general `audio-streaming` o en un repo `audio-streaming-ci` dedicado.
 
 ### Esqueleto de flujo backend (`Jenkinsfile`)
 
@@ -155,7 +155,7 @@ pipeline {
     stage('Trigger integration') {
       when { branch 'main' }
       steps {
-        build job: 'music-streaming/integration', wait: true
+        build job: 'audio-streaming/integration', wait: true
       }
     }
     stage('Deploy production') {
@@ -216,7 +216,7 @@ Si el cambio es **breaking**, versionar API (`/v2`) o coordinar release etiqueta
 - [ ] Instalar Jenkins en `192.168.1.79` (Java, Docker plugin, credentials).
 - [ ] Job `backend`: test + package.
 - [ ] Job `web`: install + test + build.
-- [ ] Contract check usando `audio-streaming-backend/docs/openapi.yaml`.
+- [ ] Contract check usando [openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml).
 - [ ] Staging + job `integration` (smoke API + e2e web mínimos).
 - [ ] Deploy a prod condicionado al verde de integración.
 
@@ -255,6 +255,5 @@ La arquitectura de pruebas (contrato + staging + integración) **no depende** de
 - [arquitectura.md](./arquitectura.md) — visión back + web (v0.1.0)
 - [roadmap.md](./roadmap.md) — desktop / mobile / mini-back / sync (futuro)
 - [README de este repo](./README.md) — docs, estado y enlaces a repos
-- [README del workspace](../README.md) — arranque local del workspace
-- [OpenAPI del backend](../audio-streaming-backend/docs/openapi.yaml) — contrato HTTP
+- [OpenAPI del backend](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml) — contrato HTTP
 - Resumen: puerto **3389** = RDP; Jenkins ≠ **8080** (reservado a la API).

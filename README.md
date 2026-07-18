@@ -1,8 +1,8 @@
-# Music Streaming
+# Audio Streaming
 
 Repo general del ecosistema. Contiene documentación, estado del proyecto y enlaces a los demás repos. **No contiene código de aplicación.**
 
-Nombre canónico: `music-streaming`. Carpetas locales: `audio-streaming-*`.
+Repos en GitHub: `audio-streaming-*`.
 
 ## Alcance por versión
 
@@ -11,34 +11,39 @@ Nombre canónico: `music-streaming`. Carpetas locales: `audio-streaming-*`.
 | **v0.1.0 (actual)** | Backend + cliente **web** |
 | Futuro | Desktop, mobile, mini-back local, sync |
 
-No hay paquete `shared`. El contrato público es la API HTTP del backend (`audio-streaming-backend/docs/openapi.yaml`). Cada front futuro lo consumirá por su cuenta.
+No hay paquete `shared`. El contrato público es la API HTTP del backend ([OpenAPI](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml)). Cada front futuro lo consumirá por su cuenta.
 
 ## Repos (v0.1.0)
 
-| Carpeta local | Repo / rol |
-|---------------|------------|
-| [`audio-streaming-backend`](../audio-streaming-backend) | `B3RT1C/music-streaming-backend` — API + OpenAPI |
-| [`audio-streaming-web`](../audio-streaming-web) | `B3RT1C/music-streaming-web` — cliente web |
-| `audio-streaming` (este repo) | Documentación, roadmap y estado |
+| Repo | Rol |
+|------|-----|
+| [audio-streaming-backend](https://github.com/B3RT1C/audio-streaming-backend) | API central + OpenAPI |
+| [audio-streaming-web](https://github.com/B3RT1C/audio-streaming-web) | Cliente web |
+| [audio-streaming](https://github.com/B3RT1C/audio-streaming) (este repo) | Documentación, roadmap y estado |
 
 ## Documentación
 
 - [Arquitectura](./arquitectura.md) — arquitectura de v0.1.0 (back + web)
 - [Roadmap futuro](./roadmap.md) — desktop / mobile / mini-back / sync (**fuera de v0.1.0**)
 - [CI/CD con Jenkins](./jenkins-ci-cd.md)
-- Contrato API: [`../audio-streaming-backend/docs/openapi.yaml`](../audio-streaming-backend/docs/openapi.yaml)
+- Contrato API: [openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml) (en el repo backend)
 
-## Arranque local (workspace)
+## Arranque local (workspace multi-carpeta)
 
-Desde la raíz del workspace (`../`):
+Si clonas los repos hermanos juntos en el mismo directorio:
 
 ```bash
-docker compose up -d
-cd ../audio-streaming-backend && ./mvnw spring-boot:run
-cd ../audio-streaming-web && npm install && npm start
+# postgres
+docker compose up -d   # compose del workspace local, si lo tienes
+
+cd audio-streaming-backend && ./mvnw spring-boot:run
+cd audio-streaming-web && npm install && npm start
 ```
 
-Variables de BBDD: ver [`../.env.example`](../.env.example).
+- API: `http://localhost:8080`
+- Web: `http://localhost:4200`
+
+Variables de BBDD opcionales: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` (ver `.env.example` del workspace local).
 
 ## Estado actual (v0.1.0)
 
