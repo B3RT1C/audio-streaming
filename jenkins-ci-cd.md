@@ -25,7 +25,7 @@ El producto está partido en varios repos/carpetas:
 | `audio-streaming-mobile` | pendiente | Cliente mobile |
 | `audio-streaming` | [B3RT1C/audio-streaming](https://github.com/B3RT1C/audio-streaming) | Docs, roadmap, estado |
 
-El back es la fuente de verdad. Los fronts consumen el mismo contrato HTTP (`GET/POST/DELETE /song`, streaming con HTTP Range), documentado en [openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml). Ver [arquitectura.md](./arquitectura.md).
+El back es la fuente de verdad. Los fronts consumen el mismo contrato HTTP (`GET/POST/DELETE /song`, streaming con HTTP Range), documentado en [openapi.yaml](./openapi.yaml). Ver [arquitectura.md](./arquitectura.md).
 
 ## 3. Infraestructura prevista
 
@@ -216,7 +216,7 @@ Si el cambio es **breaking**, versionar API (`/v2`) o coordinar release etiqueta
 - [ ] Instalar Jenkins en `192.168.1.79` (Java, Docker plugin, credentials).
 - [ ] Job `backend`: test + package.
 - [ ] Job `web`: install + test + build.
-- [ ] Contract check usando [openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml).
+- [ ] Contract check usando [openapi.yaml](./openapi.yaml).
 - [ ] Staging + job `integration` (smoke API + e2e web mínimos).
 - [ ] Deploy a prod condicionado al verde de integración.
 
@@ -255,5 +255,5 @@ La arquitectura de pruebas (contrato + staging + integración) **no depende** de
 - [arquitectura.md](./arquitectura.md) — visión back + web (v0.1.0)
 - [roadmap.md](./roadmap.md) — desktop / mobile / mini-back / sync (futuro)
 - [README de este repo](./README.md) — docs, estado y enlaces a repos
-- [OpenAPI del backend](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml) — contrato HTTP
+- [OpenAPI del backend](./openapi.yaml) — contrato HTTP
 - Resumen: puerto **3389** = RDP; Jenkins ≠ **8080** (reservado a la API).

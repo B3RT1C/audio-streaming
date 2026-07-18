@@ -11,7 +11,7 @@ Repos en GitHub: `audio-streaming-*`.
 | **v0.1.0 (actual)** | Backend + cliente **web** |
 | Futuro | Desktop, mobile, mini-back local, sync |
 
-No hay paquete `shared`. El contrato público es la API HTTP del backend ([OpenAPI](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml)). Cada front futuro lo consumirá por su cuenta.
+No hay paquete `shared`. El contrato público es la API HTTP del backend ([OpenAPI](./openapi.yaml)). Cada front futuro lo consumirá por su cuenta.
 
 ## Repos (v0.1.0)
 
@@ -26,7 +26,7 @@ No hay paquete `shared`. El contrato público es la API HTTP del backend ([OpenA
 - [Arquitectura](./arquitectura.md) — arquitectura de v0.1.0 (back + web)
 - [Roadmap futuro](./roadmap.md) — desktop / mobile / mini-back / sync (**fuera de v0.1.0**)
 - [CI/CD con Jenkins](./jenkins-ci-cd.md)
-- Contrato API: [openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml) (en el repo backend)
+- Contrato API: [openapi.yaml](./openapi.yaml) (en el repo backend)
 
 ## Arranque local (workspace multi-carpeta)
 

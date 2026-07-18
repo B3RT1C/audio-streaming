@@ -2,7 +2,7 @@
 
 **Fuera del alcance de v0.1.0.** La versión inicial es solo backend + web.
 
-El contrato HTTP ya está documentado en [openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml).
+El contrato HTTP ya está documentado en [openapi.yaml](./openapi.yaml).
 
 ## Objetivo a futuro
 
