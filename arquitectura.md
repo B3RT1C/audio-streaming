@@ -26,10 +26,10 @@ No hay paquete shared.
 
 ## Contrato de reproducción
 
-- `GET /song`
-- `GET /song/file?id=` con soporte HTTP Range
-- `POST /song/file`
-- `DELETE /song?id=`
+- `GET /audios`
+- `GET /audios/{id}` con soporte HTTP Range
+- `POST /audios`
+- `DELETE /audios/{id}`
 
 ## Más adelante
 
