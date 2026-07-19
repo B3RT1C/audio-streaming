@@ -26,6 +26,7 @@ No hay paquete `shared`. El contrato público es la API HTTP del backend:
 ## Documentación
 
 - [Arquitectura](./arquitectura.md) — arquitectura de v0.1.0 (back + web)
+- [Versionado](./VERSIONING.md) — producto, tags, OpenAPI, Maven, npm, Flyway
 - [Notas de versión v0.1.0](./RELEASE_v0.1.0.md)
 - [Roadmap futuro](./roadmap.md) — desktop / mobile / mini-back / sync (**fuera de v0.1.0**)
 - [CI/CD con Jenkins](./jenkins-ci-cd.md)
