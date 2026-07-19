@@ -72,7 +72,7 @@ Biblioteca rica en web, luego desktop con mini-back y sincronización al central
 
 Hito (no feature nueva obligatoria): versión **desktop** usable y **sincronización** mini-back ↔ backend en verde.
 
-- Tags / OpenAPI / Maven / npm en `1.0.0`, [RELEASE.md](./RELEASE.md) actualizado, archive `RELEASE_v1.0.0.md` si se archiva el anterior.
+- Tags / OpenAPI / Maven / npm en `1.0.0`, [RELEASE.md](./RELEASE.md) actualizado; archivar la previa en `releases/vX.Y.Z.md`.
 - A partir de aquí, breaking changes de API con más rigor semver.
 
 ## Post-1.0

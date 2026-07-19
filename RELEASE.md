@@ -1,7 +1,7 @@
 # Notas de versión — v0.1.0 (actual)
 
 Este archivo **existe siempre** y describe la **versión de producto actual**.  
-Al publicar un release nuevo: archivar el contenido previo en `RELEASE_vX.Y.Z.md` y reescribir este fichero.
+Al publicar un release nuevo: copiar este fichero a `releases/vX.Y.Z.md` (versión que deja de ser actual) y reescribir `RELEASE.md`.
 
 Primera versión usable del ecosistema **audio-streaming**.
 
