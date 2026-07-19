@@ -1,4 +1,7 @@
-# Notas de versión — v0.1.0
+# Notas de versión — v0.1.0 (actual)
+
+Este archivo **existe siempre** y describe la **versión de producto actual**.  
+Al publicar un release nuevo: copiar este fichero a `releases/vX.Y.Z.md` (versión que deja de ser actual) y reescribir `RELEASE.md`.
 
 Primera versión usable del ecosistema **audio-streaming**.
 
@@ -34,4 +37,4 @@ Primera versión usable del ecosistema **audio-streaming**.
 
 ## Fuera de esta versión
 
-Desktop, mobile, mini-back local y sync → [roadmap.md](./roadmap.md).
+Siguiente trabajo → [roadmap.md](./roadmap.md).
