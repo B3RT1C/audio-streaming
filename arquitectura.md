@@ -26,10 +26,11 @@ No hay paquete shared.
 
 ## Contrato de reproducción
 
-- `GET /song`
-- `GET /song/file?id=` con soporte HTTP Range
-- `POST /song/file`
-- `DELETE /song?id=`
+- `GET /audios`
+- `GET /audios/{id}` con soporte HTTP Range
+- `POST /audios` (`name` opcional; títulos repetibles)
+- `DELETE /audios/{id}`
+- Errores: `{ message, code }` (ver OpenAPI)
 
 ## Más adelante
 
