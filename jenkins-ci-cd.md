@@ -107,7 +107,8 @@ Workspaces Multibranch: `audio-streaming_backend_main`, `audio-streaming_web_mai
 - Scan Multibranch: hasta ~5 min tras el push (o “Scan Multibranch Pipeline Now”).
 - Si WSL/Postgres se duerme, `/audios` puede fallar hasta `ensure-staging` / redeploy.
 - Integration es smoke de API; staging-smoke cubre front HTTP básico, no e2e de UI completo.
-- Smoke (`:8082`) y staging (`:8080`) comparten la misma Postgres (`music-streaming-db`). Los scripts fuerzan `ddl-auto=update` (no recrean tablas); cambios de esquema duros (p. ej. columnas `NOT NULL` nuevas) pueden requerir migración manual hasta adoptar Flyway.
+- Smoke (`:8082`) y staging (`:8080`) comparten la misma Postgres (`music-streaming-db`). El jar aplica migraciones **Flyway** al arrancar (`ddl-auto=validate`); no se usa `create-drop` en CI/staging.
+
 
 ## Referencias
 

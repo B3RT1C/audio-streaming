@@ -21,7 +21,7 @@ No hay paquete shared.
 
 ## Responsabilidades (v0.1.0)
 
-- **Back central**: catálogo, metadata, almacenamiento y contrato OpenAPI.
+- **Back central**: catálogo, metadata, almacenamiento y contrato OpenAPI. Esquema Postgres vía **Flyway** (sin wipe de datos de usuario).
 - **Front web**: UI y reproducción online vía `PlaybackResolver` (URL del back central).
 
 ## Contrato de reproducción
