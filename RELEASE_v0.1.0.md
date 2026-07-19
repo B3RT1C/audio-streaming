@@ -30,7 +30,7 @@ Primera versión usable del ecosistema **audio-streaming**.
 ## Ops
 
 - Repos: `audio-streaming`, `audio-streaming-backend`, `audio-streaming-web`
-- Jenkins en LAN con Poll SCM y staging (ver [jenkins-ci-cd.md](./jenkins-ci-cd.md))
+- Jenkins en LAN con Multibranch scan (~5 min) y staging (ver [jenkins-ci-cd.md](./jenkins-ci-cd.md))
 
 ## Fuera de esta versión
 
