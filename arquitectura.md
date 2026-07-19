@@ -34,4 +34,4 @@ No hay paquete shared.
 
 ## Más adelante
 
-Desktop, mobile, mini-back local y sync quedan fuera de v0.1.0. Ver [roadmap.md](./roadmap.md).
+Desktop, mobile, mini-back local y sync quedan fuera de v0.1.0. Plan: [roadmap.md](./roadmap.md) (`1.0` = desktop + sync). Notas actuales: [RELEASE.md](./RELEASE.md).

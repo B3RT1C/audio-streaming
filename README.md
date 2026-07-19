@@ -9,7 +9,8 @@ Repos en GitHub: `audio-streaming-*`.
 | Versión | Alcance |
 |---------|---------|
 | **v0.1.0 (actual)** | Backend + cliente **web** (en `main`) |
-| Futuro | Desktop, mobile, mini-back local, sync |
+| Camino a **v1.0.0** | Biblioteca web rica → desktop + sync (ver [roadmap.md](./roadmap.md)) |
+| Post-1.0 | Mobile, TUI, carátulas, avisos externos |
 
 No hay paquete `shared`. El contrato público es la API HTTP del backend:
 
@@ -27,8 +28,8 @@ No hay paquete `shared`. El contrato público es la API HTTP del backend:
 
 - [Arquitectura](./arquitectura.md) — arquitectura de v0.1.0 (back + web)
 - [Versionado](./VERSIONING.md) — producto, tags, OpenAPI, Maven, npm, Flyway
-- [Notas de versión v0.1.0](./RELEASE_v0.1.0.md)
-- [Roadmap futuro](./roadmap.md) — desktop / mobile / mini-back / sync (**fuera de v0.1.0**)
+- [Notas de versión (actual)](./RELEASE.md) — siempre la release vigente (`RELEASE_v*.md` = archivo)
+- [Roadmap](./roadmap.md) — plan post-v0.1.0 hasta 1.0 (desktop+sync) y después
 - [CI/CD con Jenkins](./jenkins-ci-cd.md)
 
 ## Cómo clonar el ecosistema
@@ -77,4 +78,4 @@ Alcance cerrado: **solo backend + web**, mergeado en `main` de cada repo.
   LAN: Jenkins `:8081`, API staging `:8080/audios`, web staging `:8083`  
   Detalle: [jenkins-ci-cd.md](./jenkins-ci-cd.md)
 
-Fuera de v0.1.0 (ver [roadmap.md](./roadmap.md)): desktop, mobile, mini-back local, sync.
+Fuera de v0.1.0: ver [roadmap.md](./roadmap.md) (próximo foco: UI/metadata/playlists en web; **1.0** = desktop + sync).
