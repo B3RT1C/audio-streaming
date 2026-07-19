@@ -72,7 +72,7 @@ Alcance cerrado: **solo backend + web**, mergeado en `main` de cada repo.
 - [x] Backend: listar / subir / borrar / stream (HTTP Range) + `contentHash`
 - [x] Web: biblioteca, controles, upload, delete, estados y errores
 - [x] OpenAPI en el backend
-- [x] CI/CD Jenkins (Poll SCM): tests → integration → staging  
+- [x] CI/CD Jenkins (Multibranch scan ~5 min): tests → integration → staging  
   LAN: Jenkins `:8081`, API staging `:8080/audios`, web staging `:8083`  
   Detalle: [jenkins-ci-cd.md](./jenkins-ci-cd.md)
 
