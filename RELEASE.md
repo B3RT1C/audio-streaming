@@ -1,40 +1,93 @@
-# Notas de versión — v0.1.0 (actual)
+# Notas de versión — v0.2.0 (actual)
 
 Este archivo **existe siempre** y describe la **versión de producto actual**.  
 Al publicar un release nuevo: copiar este fichero a `releases/vX.Y.Z.md` (versión que deja de ser actual) y reescribir `RELEASE.md`.
 
-Primera versión usable del ecosistema **audio-streaming**.
+Biblioteca usable en web: metadata de las pistas, playlists e importación de una carpeta. Sustituye a [v0.1.0](./releases/v0.1.0.md).
 
 ## Alcance
 
-- Backend (Spring Boot) + cliente web (Angular)
+- Backend (Spring Boot 4, Java 25) + cliente web (Angular 21)
 - Sin desktop, mobile ni mini-back local
+- Sin login: la API se usa dentro de la red privada
 
 ## Backend
 
-- `GET /audios` — listar metadata
-- `GET /audios/{id}` — streaming con HTTP Range
-- `POST /audios` — subir MP3 (`name` opcional; títulos repetibles; fichero con `storageKey` UUID)
-- `DELETE /audios/{id}` — borrar metadata + fichero
-- `contentHash` (SHA-256) en cada pista (informativo; no bloquea duplicados)
-- Errores API: `{ message, code }` (`FILE_REQUIRED`, `INVALID_NAME`, `NOT_FOUND`, …)
-- Seed con hashes; secuencia de IDs sincronizada tras el seed
-- OpenAPI: [`docs/openapi.yaml`](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml)
+Contrato: [`docs/openapi.yaml`](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml) (`info.version` **0.2.0**).
+
+Flyway `V2__app_0_2_0_library_metadata_and_playlists.sql` añade a `audio_data` las columnas `title`, `artist`, `album`, `duration_seconds`, `track_number`, `original_filename`, `original_path` y `created_at`, y crea las tablas `playlists` y `playlist_items`.
+
+Al subir o importar, jaudiotagger lee título, artista (si falta, el artista del álbum), álbum, duración y número de pista. Si no hay título, se usa el nombre del archivo sin extensión.
+
+Formatos: `mp3`, `m4a`, `aac`, `flac`, `wav`, `ogg`, `opus`, `webm`.
+
+### Audios
+
+- `GET /audios?q=` — lista. `q` es opcional: subcadena sin distinguir mayúsculas ni acentos, sobre título, artista, álbum, nombre y nombre de archivo. Vacío o ausente devuelve el catálogo, ordenado por id.
+- `GET /audios/{id}` — stream. `Content-Type` según la extensión. Un `Range` válido responde **206**. Un rango que empieza más allá del fichero responde **416** (`RANGE_NOT_SATISFIABLE`, `Content-Range: bytes */length`).
+- `POST /audios` — multipart (`file` obligatorio, `name` opcional). **201** `{ "message": "File received" }`, sin id. Por encima del límite, **413** `FILE_TOO_LARGE`. Un hash repetido se anota en el log y el alta sigue adelante.
+- `PATCH /audios/{id}` — solo cambian los campos enviados. `null` borra artista, álbum, número de pista o duración. Título y nombre no se pueden vaciar. Los campos desconocidos se ignoran.
+- `DELETE /audios/{id}` — **204**. Borra metadata, fichero y la pista en todas las playlists.
+
+Campos de cada pista, además de los de 0.1.0 (`id`, `name`, `extension`, `path`, `contentHash`): `title`, `artist`, `album`, `durationSeconds`, `trackNumber`, `originalFilename`, `createdAt`. Artista, álbum, duración y número de pista pueden ser `null`.
+
+### Playlists
+
+- `GET /playlists` — resúmenes, sin `items` (sí `itemCount`)
+- `POST /playlists` `{ "name" }` — **201**, con `items: []`
+- `GET /playlists/{id}` — detalle. `items` es `[{ position, audioId, audio }]`, en orden de reproducción. `position` empieza en 1 y puede tener huecos si se borra una canción de la biblioteca
+- `PATCH /playlists/{id}` `{ "name" }` — renombra y devuelve la playlist con sus items
+- `DELETE /playlists/{id}` — **204**. No borra las canciones
+- `POST /playlists/{id}/items` `{ "audioId" }` — **201** si se añade al final; **200** si ya estaba (no duplica). Devuelve el ítem, no la playlist
+- `DELETE /playlists/{id}/items/{audioId}` — **204**
+- `PUT /playlists/{id}/items` `{ "audioIds": [3, 1, 2] }` — reordena y reescribe `position` desde 1. También acepta el array `[3, 1, 2]`. La lista tiene que ser exactamente las pistas actuales, cada una una vez. Si no, **400** `INVALID_ORDER`
+
+### Importar una carpeta
+
+`POST /admin/import`, cuerpo opcional `{ "path" }`. Recorre las subcarpetas, lee etiquetas y copia al almacenamiento. No mueve ni borra los originales. Salta un fichero si su ruta original o su `contentHash` ya están guardados. Lo que no es audio se ignora (también se ignora lo que ya está dentro de la carpeta de almacenamiento).
+
+`path` puede ser absoluto o relativo a `AUDIO_IMPORT_DIR`, y tiene que quedar dentro de esa carpeta. Si se omite, se importa `AUDIO_IMPORT_DIR`. Sin esa variable, **400** `IMPORT_NOT_CONFIGURED`. Una ruta que se sale de la carpeta base es `PATH_NOT_ALLOWED`.
+
+Respuesta: `{ "imported", "skipped", "failed", "ignored", "errors" }`. Un fichero ilegible suma `failed` y no corta el resto. `errors` guarda hasta 100 mensajes.
+
+La misma importación puede ejecutarse una sola vez al arrancar el jar con `--app.import.path` (detalle en el README del backend).
+
+Errores: `{ message, code }` — `FILE_REQUIRED`, `FILE_TOO_LARGE`, `INVALID_NAME`, `INVALID_FILE`, `INVALID_BODY`, `INVALID_ORDER`, `NOT_FOUND`, `STORAGE_ERROR`, `INTERNAL`, `IMPORT_NOT_CONFIGURED`, `PATH_NOT_ALLOWED`, `RANGE_NOT_SATISFIABLE`.
+
+Variables nuevas:
+
+| Variable | Default | Uso |
+|----------|---------|-----|
+| `AUDIO_STORAGE_DIR` | vacío | Carpeta de los audios. Vacía: se sigue usando `uploads/songs/`. Definida: ruta absoluta |
+| `AUDIO_MAX_FILE_SIZE` | `500MB` | Tamaño máximo de un fichero |
+| `AUDIO_MAX_REQUEST_SIZE` | `510MB` | Tamaño máximo de la petición. Al menos `AUDIO_MAX_FILE_SIZE` |
+| `CORS_ALLOWED_ORIGINS` | `*` | Orígenes del navegador, separados por comas |
+| `AUDIO_IMPORT_DIR` | vacío | Carpeta base de `POST /admin/import`. Vacía: el endpoint responde `IMPORT_NOT_CONFIGURED` |
+
+Siguen `DB_URL`, `DB_USERNAME` y `DB_PASSWORD`.
 
 ## Web
 
-- Lista de canciones, selección por defecto
-- Controles previous / play-pause / stop / next + barra de progreso
-- Upload (selector + drag & drop) con diálogo de nombre
-- Borrar con confirmación
-- Errores de API / red / reproducción mapeados a mensajes en español
-- `PlaybackResolver` para no acoplar el player a la URL del back
+- Rediseño oscuro tipo Spotify, pensado primero para el móvil
+- Biblioteca con título, artista, álbum, número de pista y duración
+- Buscador (`GET /audios?q=`, espera de 300 ms)
+- Edición de título, artista, álbum y número de pista
+- Playlists: crear, renombrar, borrar, añadir, quitar y reordenar
+- Reproducir la biblioteca o una lista: cola, anterior, siguiente, aleatorio, repetir (una o todas) y barra de progreso con salto
+- Media Session (controles de la pantalla de bloqueo), cuando el navegador lo permite
+- Subida con barra de progreso, hasta 500 MB, y aviso si el archivo no es audio o se pasa del límite
+- PWA instalable (`manifest.webmanifest` e iconos). El service worker no guarda caché: no hay modo sin conexión. Hace falta HTTPS o localhost para instalarla
+- `apiUrl` en `config.json` (en desarrollo, `public/config.json`; el build lo copia junto al `index.html`). Se lee al abrir la página. Vacío o ausente: `{protocolo}//{hostname}:8080`. No hace falta recompilar
+- `PlaybackResolver` sigue armando la URL de stream a partir de ese origen
 
 ## Ops
 
 - Repos: `audio-streaming`, `audio-streaming-backend`, `audio-streaming-web`
-- Jenkins en LAN con Multibranch scan (~5 min) y staging (ver [jenkins-ci-cd.md](./jenkins-ci-cd.md))
+- Instalación manual en un mini PC Windows de casa, accesible solo por Tailscale y la LAN. API en el puerto **8090**, web en el **8091**, Postgres en WSL con la base `audio_streaming`. Despliegue a petición, sin auto-update. En esa web, `config.json` apunta `apiUrl` al mismo host en el puerto 8090, y `CORS_ALLOWED_ORIGINS` tiene que permitir el origen de la página (puerto 8091)
+- Jenkins está parado. El diseño de aquel CI/CD queda en [jenkins-ci-cd.md](./jenkins-ci-cd.md) como histórico
 
 ## Fuera de esta versión
 
-Siguiente trabajo → [roadmap.md](./roadmap.md).
+Siguiente trabajo → [roadmap.md](./roadmap.md): título secundario, tags, filtros por campo, escucha y estadísticas, tests, desktop y sync.
+
+`GET /sync/status` sigue declarado en el OpenAPI y no tiene controlador.

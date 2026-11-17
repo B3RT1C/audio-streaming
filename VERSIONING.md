@@ -1,6 +1,6 @@
 # Versionado
 
-Una sola **versión de producto** para el ecosistema (hoy **0.1.0**). No hay versiones compuestas tipo `app_back` / `app_front`.
+Una sola **versión de producto** para el ecosistema (hoy **0.2.0**). No hay versiones compuestas tipo `app_back` / `app_front`.
 
 ## Fuente de verdad
 
@@ -8,7 +8,7 @@ Una sola **versión de producto** para el ecosistema (hoy **0.1.0**). No hay ver
 |-------|--------|-------------------|
 | Producto actual | Este doc + [README](./README.md) + [RELEASE.md](./RELEASE.md) | `MAJOR.MINOR.PATCH` |
 | Notas de release | [RELEASE.md](./RELEASE.md) (**siempre presente**) | versión actual |
-| Histórico de releases | [`releases/vX.Y.Z.md`](./releases/) | solo versiones **ya sustituidas** (vacío hasta el primer bump) |
+| Histórico de releases | [`releases/vX.Y.Z.md`](./releases/) | solo versiones **ya sustituidas** (hoy [`releases/v0.1.0.md`](./releases/v0.1.0.md)) |
 | Tags git | `audio-streaming-backend`, `audio-streaming-web` (y docs si hay release notes) | `vMAJOR.MINOR.PATCH` |
 | OpenAPI | `audio-streaming-backend/docs/openapi.yaml` → `info.version` | misma versión (sin `v`) |
 | Maven | `audio-streaming-backend/pom.xml` → `/project/version` | misma versión |
@@ -40,7 +40,7 @@ Roadmap ([roadmap.md](./roadmap.md)) define **features** por release; este doc d
 - [ ] Actualizar README (versión actual) si aplica
 - [ ] Migraciones Flyway nuevas (si hay) con `__app_x_y_z_`
 - [ ] Tag anotado `vN` en backend y web (+ push)
-- [ ] Jenkins archive del tag (sin deploy staging)
+- [ ] Despliegue manual de la instalación de casa, si toca. Jenkins está parado y ya no archiva el tag ni despliega staging ([jenkins-ci-cd.md](./jenkins-ci-cd.md))
 ```
 
 ## Comprobar

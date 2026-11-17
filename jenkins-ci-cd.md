@@ -1,6 +1,8 @@
 # Integración CI/CD con Jenkins
 
-Diseño y operación del CI/CD del ecosistema **audio-streaming** en Jenkins on-prem (LAN).
+> **Parado / histórico.** Jenkins está parado y este documento ya no describe el despliegue vigente. No hay staging automático ni auto-update. La instalación actual es manual, en un mini PC Windows de casa, accesible solo por Tailscale y la LAN: API en el puerto 8090, web en el 8091, Postgres en WSL con la base `audio_streaming`. Estado: [README](./README.md).
+
+Diseño y operación del CI/CD del ecosistema **audio-streaming** en Jenkins on-prem (LAN), tal como estaba cuando este pipeline corría.
 
 ## 1. Objetivo
 
@@ -17,13 +19,13 @@ No hay producción automatizada todavía. Desktop/mobile quedan fuera de v0.1.0.
 
 | Servicio | Detalle |
 |----------|---------|
-| Host | `192.168.1.79` (usuario Windows `b3-ml`) |
-| Jenkins | http://192.168.1.79:8081/ |
-| Staging API | http://192.168.1.79:8080/audios |
-| Staging Web | http://192.168.1.79:8083/ |
-| RDP / SSH | `:3389` / `b3-ml@192.168.1.79:22` |
+| Host | Mini PC Windows en la LAN |
+| Jenkins | puerto `8081` |
+| Staging API | puerto `8080`, ruta `/audios` |
+| Staging Web | puerto `8083` |
+| RDP / SSH | puertos `3389` / `22` |
 | Agente | JDK 26 (builds), Temurin 21 (Jenkins), Maven 3.9, Node 24, Git |
-| BD | PostgreSQL en WSL Ubuntu (`127.0.0.1:5432`, red espejo) |
+| BD | PostgreSQL en WSL Ubuntu (`localhost:5432`, red espejo) |
 | Trigger | Multibranch Git scan `5m` (sin webhooks ni túnel) |
 
 Credenciales de Jenkins: **no van en este repo**.
@@ -66,7 +68,7 @@ tag v0.x.y      → contract + tests + archive     [sin deploy]
 
 ## 6. Operación en el servidor
 
-Scripts (`C:\Users\b3-ml\jenkins-scripts\`):
+Scripts (carpeta local `jenkins-scripts` del usuario de Windows):
 
 - `deploy-staging.ps1` / `start-staging-api.ps1`
 - `deploy-staging-web.ps1`
