@@ -8,15 +8,15 @@ Repos en GitHub: `audio-streaming-*`.
 
 | Versión | Alcance |
 |---------|---------|
-| **v0.1.0 (actual)** | Backend + cliente **web** (en `main`) |
-| Camino a **v1.0.0** | Biblioteca web rica → desktop + sync (ver [roadmap.md](./roadmap.md)) |
+| **v0.2.0 (actual)** | Backend + cliente **web**: metadata de pista, playlists, búsqueda e importación de carpeta |
+| Camino a **v1.0.0** | Tags y filtros → escucha → desktop + sync (ver [roadmap.md](./roadmap.md)) |
 | Post-1.0 | Mobile, TUI, carátulas, avisos externos |
 
 No hay paquete `shared`. El contrato público es la API HTTP del backend:
 
 - OpenAPI (fuente de verdad): [audio-streaming-backend/docs/openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml)
 
-## Repos (v0.1.0)
+## Repos (v0.2.0)
 
 | Repo | Rol |
 |------|-----|
@@ -26,11 +26,11 @@ No hay paquete `shared`. El contrato público es la API HTTP del backend:
 
 ## Documentación
 
-- [Arquitectura](./arquitectura.md) — arquitectura de v0.1.0 (back + web)
+- [Arquitectura](./arquitectura.md) — arquitectura de v0.2.0 (back + web)
 - [Versionado](./VERSIONING.md) — producto, tags, OpenAPI, Maven, npm, Flyway
 - [Notas de versión (actual)](./RELEASE.md) — siempre la release vigente; histórico en [`releases/`](./releases/)
-- [Roadmap](./roadmap.md) — plan post-v0.1.0 hasta 1.0 (desktop+sync) y después
-- [CI/CD con Jenkins](./jenkins-ci-cd.md)
+- [Roadmap](./roadmap.md) — plan post-v0.2.0 hasta 1.0 (desktop+sync) y después
+- [CI/CD con Jenkins](./jenkins-ci-cd.md) — histórico: Jenkins está parado
 
 ## Cómo clonar el ecosistema
 
@@ -52,7 +52,7 @@ audio-streaming/                 ← carpeta local (no es un repo)
 
 ## Arranque local
 
-Necesitas PostgreSQL en `localhost:5432` (DB `music-streaming-db`, user/pass `postgres` por defecto). En el servidor de staging eso va por WSL; en desarrollo, el Postgres que tengas instalado.
+PostgreSQL en `localhost:5432`. Por defecto la base es `music-streaming-db`, usuario y clave `postgres`. Eso es el defecto de desarrollo. La instalación de casa usa otra base (`audio_streaming`); en local se deja el defecto salvo que definas `DB_URL`.
 
 ```bash
 cd audio-streaming-backend && ./mvnw spring-boot:run
@@ -61,21 +61,40 @@ cd audio-streaming-web && npm install && npm start
 ```
 
 - API: `http://localhost:8080`
-- Web: `http://localhost:4200`
+- Web: `http://localhost:4200` (en local pide la API en el puerto 8080 del mismo host)
 
-Variables opcionales: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` (ver README del [backend](https://github.com/B3RT1C/audio-streaming-backend)).
+Variables del backend:
+
+| Variable | Default | Uso |
+|----------|---------|-----|
+| `DB_URL` | `jdbc:postgresql://localhost:5432/music-streaming-db` | JDBC |
+| `DB_USERNAME` | `postgres` | Usuario de la base |
+| `DB_PASSWORD` | `postgres` | Clave de la base |
+| `AUDIO_STORAGE_DIR` | vacío | Carpeta de los audios. Vacía: `uploads/songs/`. Definida: ruta absoluta |
+| `AUDIO_MAX_FILE_SIZE` | `500MB` | Tamaño máximo de un fichero |
+| `AUDIO_MAX_REQUEST_SIZE` | `510MB` | Tamaño máximo de la petición. Al menos `AUDIO_MAX_FILE_SIZE` |
+| `CORS_ALLOWED_ORIGINS` | `*` | Orígenes del navegador, separados por comas |
+| `AUDIO_IMPORT_DIR` | vacío | Carpeta base de `POST /admin/import`. Vacía: el endpoint responde `IMPORT_NOT_CONFIGURED` |
+
+La web lee `config.json` al abrir la página (`public/config.json` en desarrollo). `apiUrl` vacío, o un fichero ausente, dejan el mismo host en el puerto 8080. Para otro sitio:
+
+```json
+{
+  "apiUrl": "http://localhost:8080"
+}
+```
 
 Más detalle: READMEs de [backend](https://github.com/B3RT1C/audio-streaming-backend) y [web](https://github.com/B3RT1C/audio-streaming-web).
 
-## Estado actual (v0.1.0)
+## Estado actual (v0.2.0)
 
-Alcance cerrado: **solo backend + web**, mergeado en `main` de cada repo.
+Alcance cerrado en `main` de cada repo: **backend + web**.
 
-- [x] Backend: listar / subir / borrar / stream (HTTP Range) + `contentHash`
-- [x] Web: biblioteca, controles, upload, delete, estados y errores
-- [x] OpenAPI en el backend
-- [x] CI/CD Jenkins (Multibranch scan ~5 min): tests → integration → staging  
-  LAN: Jenkins `:8081`, API staging `:8080/audios`, web staging `:8083`  
-  Detalle: [jenkins-ci-cd.md](./jenkins-ci-cd.md)
+- [x] Backend (Spring Boot 4, Java 25): listar con `q`, subir, editar metadata, borrar, stream con Range (206/416), playlists y `POST /admin/import`
+- [x] Web (Angular 21): UI oscura tipo Spotify, biblioteca, búsqueda, playlists, PWA y Media Session. `apiUrl` en `config.json` (por defecto, el mismo host en el puerto 8080)
+- [x] OpenAPI 0.2.0 en el backend
+- [x] Instalación de casa, manual y a petición (sin auto-update). Mini PC Windows, solo Tailscale y la LAN: API `:8090`, web `:8091`, Postgres en WSL (DB `audio_streaming`). En esa web, `config.json` apunta la API al puerto 8090
 
-Fuera de v0.1.0: ver [roadmap.md](./roadmap.md) (próximo foco: UI/metadata/playlists en web; **1.0** = desktop + sync).
+Jenkins está parado: ya no hay staging automático. El diseño de aquel CI/CD se conserva en [jenkins-ci-cd.md](./jenkins-ci-cd.md) como histórico.
+
+Fuera de v0.2.0: ver [roadmap.md](./roadmap.md) (próximo foco: título secundario y tags; **1.0** = desktop + sync).
