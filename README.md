@@ -8,15 +8,15 @@ Repos en GitHub: `audio-streaming-*`.
 
 | Versión | Alcance |
 |---------|---------|
-| **v0.2.0 (actual)** | Backend + cliente **web**: metadata de pista, playlists, búsqueda e importación de carpeta |
-| Camino a **v1.0.0** | Tags y filtros → escucha → desktop + sync (ver [roadmap.md](./roadmap.md)) |
+| **v0.4.0 (actual)** | Backend + cliente **web**: título secundario, artistas, tags, filtros por campo, `q` en playlists y artistas, y reproducción aleatoria con semilla |
+| Camino a **v1.0.0** | Tags con tipo y filtro unificado → escucha → desktop + sync (ver [roadmap.md](./roadmap.md)) |
 | Post-1.0 | Mobile, TUI, carátulas, avisos externos |
 
 No hay paquete `shared`. El contrato público es la API HTTP del backend:
 
 - OpenAPI (fuente de verdad): [audio-streaming-backend/docs/openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml)
 
-## Repos (v0.2.0)
+## Repos (v0.4.0)
 
 | Repo | Rol |
 |------|-----|
@@ -26,10 +26,10 @@ No hay paquete `shared`. El contrato público es la API HTTP del backend:
 
 ## Documentación
 
-- [Arquitectura](./arquitectura.md) — arquitectura de v0.2.0 (back + web)
+- [Arquitectura](./arquitectura.md) — base de v0.2.0 (back + web). El comportamiento vigente está en [RELEASE.md](./RELEASE.md)
 - [Versionado](./VERSIONING.md) — producto, tags, OpenAPI, Maven, npm, Flyway
 - [Notas de versión (actual)](./RELEASE.md) — siempre la release vigente; histórico en [`releases/`](./releases/)
-- [Roadmap](./roadmap.md) — plan post-v0.2.0 hasta 1.0 (desktop+sync) y después
+- [Roadmap](./roadmap.md) — plan desde v0.4.1 hasta 1.0 (desktop+sync) y después
 - [CI/CD con Jenkins](./jenkins-ci-cd.md) — histórico: Jenkins está parado
 
 ## Cómo clonar el ecosistema
@@ -86,15 +86,15 @@ La web lee `config.json` al abrir la página (`public/config.json` en desarrollo
 
 Más detalle: READMEs de [backend](https://github.com/B3RT1C/audio-streaming-backend) y [web](https://github.com/B3RT1C/audio-streaming-web).
 
-## Estado actual (v0.2.0)
+## Estado actual (v0.4.0)
 
 Alcance cerrado en `main` de cada repo: **backend + web**.
 
-- [x] Backend (Spring Boot 4, Java 25): listar con `q`, subir, editar metadata, borrar, stream con Range (206/416), playlists y `POST /admin/import`
-- [x] Web (Angular 21): UI oscura tipo Spotify, biblioteca, búsqueda, playlists, PWA y Media Session. `apiUrl` en `config.json` (por defecto, el mismo host en el puerto 8080)
-- [x] OpenAPI 0.2.0 en el backend
+- [x] Backend (Spring Boot 4, Java 25): listar con `q` y filtros (`title`, `artist`, `tag`, `artistTag`, `playlistTag`, `shuffle` y `seed`), subir, editar metadata (incluido el título secundario), etiquetas, artistas, borrar, stream con Range (206/416), playlists con `q` y `tag`, y `POST /admin/import`
+- [x] Web (Angular 21): UI oscura tipo Spotify, biblioteca, búsqueda, filtros, botón Aleatorio, playlists, artistas, etiquetas, PWA y Media Session. `apiUrl` en `config.json` (por defecto, el mismo host en el puerto 8080)
+- [x] OpenAPI 0.4.0 en el backend
 - [x] Instalación de casa, manual y a petición (sin auto-update). Mini PC Windows, solo Tailscale y la LAN: API `:8090`, web `:8091`, Postgres en WSL (DB `audio_streaming`). En esa web, `config.json` apunta la API al puerto 8090
 
 Jenkins está parado: ya no hay staging automático. El diseño de aquel CI/CD se conserva en [jenkins-ci-cd.md](./jenkins-ci-cd.md) como histórico.
 
-Fuera de v0.2.0: ver [roadmap.md](./roadmap.md) (próximo foco: título secundario y tags; **1.0** = desktop + sync).
+Fuera de v0.4.0: ver [roadmap.md](./roadmap.md) (próximo foco: tags con tipo y filtro unificado, v0.4.1; **1.0** = desktop + sync).

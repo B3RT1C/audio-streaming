@@ -1,6 +1,6 @@
-# Roadmap (posterior a v0.2.0)
+# Roadmap (posterior a v0.4.0)
 
-**v0.2.0 está entregada** (backend + web). Notas: [RELEASE.md](./RELEASE.md). Lo que sigue es el plan hasta el escritorio.
+**v0.4.0 está entregada** (backend + web). Notas: [RELEASE.md](./RELEASE.md). Lo que sigue es el plan hasta el escritorio. v0.3.0 y v0.4.0 quedan abajo, ya entregadas; el siguiente paso es 0.4.1.
 
 El contrato HTTP está en el backend:
 
@@ -17,22 +17,36 @@ Biblioteca rica en web, luego desktop con mini-back y sincronización al central
 El plan anterior repartía el refresco de UI (0.2), la metadata (0.3) y las playlists (0.4). Salió junto:
 
 - Refresh de la UI web.
-- Parte de la metadata de la pista: artista, álbum, duración y número de pista. El título secundario y los tags siguen en 0.3.
-- Playlists: CRUD, añadir, quitar y orden. Los tags de playlist pasan a 0.3.
-- El player ya baraja la cola y repite. La búsqueda `q` no sustituye a los filtros por campo de 0.4.
+- Parte de la metadata de la pista: artista, álbum, duración y número de pista. El título secundario, la tabla de artistas y los tags salieron después, en 0.3.0.
+- Playlists: CRUD, añadir, quitar y orden. Los tags de playlist salieron en 0.3.0.
+- El player ya baraja la cola y repite. La búsqueda `q` no sustituye a los filtros por campo: esos, el `q` de playlists y artistas, y el shuffle con semilla salieron en 0.4.0.
 
 ## Camino a 1.0 (`0.3` → `0.9`)
 
-### v0.3.0 — Título secundario y tags
+0.3.0 y 0.4.0 están entregadas. El trabajo abierto empieza en 0.4.1.
+
+### v0.3.0 — Título secundario y tags (entregada)
 
 - Título secundario (p. ej. otro idioma).
+- Tabla de artistas.
 - Tags en **canciones**, **artistas** y **playlists** (modelo, API y UI de edición).
-- Migraciones Flyway: `V{n}__app_0_3_0_…`.
+- Migración Flyway: `V3__app_0_3_0_secondary_title_artists_and_tags.sql`.
 
-### v0.4.0 — Filtros y reproducción aleatoria
+### v0.4.0 — Filtros y reproducción aleatoria (entregada)
 
-- Filtros por nombre de canción, artista y tags (también tags de playlist donde aplique).
-- Shuffle / reproducción aleatoria en el player web. El player de 0.2.0 ya baraja la cola y repite (una o todas); este punto lo deja cerrado junto a los filtros.
+- Filtros por `title`, `artist` y por `tag`, `artistTag` y `playlistTag` (repetibles, combinados con AND).
+- `q` en `GET /playlists` y `GET /artists`.
+- `shuffle` con `seed`.
+- En la web, botón **Aleatorio**.
+- Sin migración nueva. El player de 0.2.0 ya barajaba la cola y repetía (una o todas); este punto cierra el aleatorio con semilla junto a los filtros.
+
+### v0.4.1 — Tags con tipo y filtro unificado
+
+- Las etiquetas pasan a tener tipo. Tipos del sistema, fijos, que no se pueden borrar ni renombrar: artista, género, álbum, año e idioma. Además, etiquetas libres creadas por el usuario (tipo libre / usuario), que sí se pueden crear, renombrar y borrar.
+- Las etiquetas de sistema se generan a partir de los datos existentes (artista y álbum de la canción, año y género de los metadatos del fichero) sin modificar títulos ni el texto de artista importado. El idioma se asigna a mano.
+- Artistas y playlists siguen siendo entidades propias (ficha, orden, estadísticas futuras), pero el filtro los trata como un tipo más.
+- Buscador y filtro unificados, con prefijos (p. ej. `artista:`, `género:`, `álbum:`, `año:`, `idioma:`, `playlist:`, y etiquetas libres sin prefijo o con `#`), combinables con AND, con autocompletado y chips de color por tipo.
+- Compatibilidad con los parámetros de 0.4.0.
 
 ### v0.5.0 — Escucha y estadísticas
 
