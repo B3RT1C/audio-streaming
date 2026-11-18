@@ -1,100 +1,121 @@
-# Audio Streaming
+# 🎵 Audio Streaming
 
-Repo general del ecosistema. Contiene documentación, estado del proyecto y enlaces a los demás repos. **No contiene código de aplicación.**
+[![Version](https://img.shields.io/badge/version-v0.5.0-blue?style=flat-square)](./RELEASE.md)
+[![Backend](https://img.shields.io/badge/backend-Spring%20Boot%204%20%7C%20Java%2025-brightgreen?style=flat-square&logo=springboot&logoColor=white)](https://github.com/B3RT1C/audio-streaming-backend)
+[![Frontend](https://img.shields.io/badge/frontend-Angular%2021%20%7C%20TypeScript-red?style=flat-square&logo=angular&logoColor=white)](https://github.com/B3RT1C/audio-streaming-web)
+[![Database](https://img.shields.io/badge/database-PostgreSQL%20%7C%20Flyway-blue?style=flat-square&logo=postgresql&logoColor=white)](https://github.com/B3RT1C/audio-streaming-backend)
+[![Streaming](https://img.shields.io/badge/streaming-HTTP%20Range%20(206)-orange?style=flat-square)](https://github.com/B3RT1C/audio-streaming)
 
-Repos en GitHub: `audio-streaming-*`.
+> **Repositorio general del ecosistema de streaming de audio.**  
+> Contiene la documentación técnica central, arquitectura, hoja de ruta y especificaciones. El código de la aplicación se distribuye en repositorios dedicados para backend y frontend.
 
-## Alcance por versión
+---
 
-| Versión | Alcance |
-|---------|---------|
-| **v0.4.0 (actual)** | Backend + cliente **web**: título secundario, artistas, tags, filtros por campo, `q` en playlists y artistas, y reproducción aleatoria con semilla |
-| Camino a **v1.0.0** | Tags con tipo y filtro unificado → escucha → desktop + sync (ver [roadmap.md](./roadmap.md)) |
-| Post-1.0 | Mobile, TUI, carátulas, avisos externos |
+## 🏛️ Repositorios del Ecosistema
 
-No hay paquete `shared`. El contrato público es la API HTTP del backend:
+El proyecto está desacoplado sin paquetes compartidos; la **API HTTP REST y el contrato OpenAPI** actúan como única fuente de verdad:
 
-- OpenAPI (fuente de verdad): [audio-streaming-backend/docs/openapi.yaml](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml)
+| Repositorio | Rol / Tecnología | Enlace |
+| :--- | :--- | :--- |
+| **`audio-streaming-backend`** | API central REST, streaming con Range (206), persistencia y OpenAPI | [Ver repositorio →](https://github.com/B3RT1C/audio-streaming-backend) |
+| **`audio-streaming-web`** | Cliente web SPA estilo Spotify, PWA, Media Session y gestión de biblioteca | [Ver repositorio →](https://github.com/B3RT1C/audio-streaming-web) |
+| **`audio-streaming`** | *(Este repo)* Documentación de arquitectura, versionado y roadmap | [Ver repositorio →](https://github.com/B3RT1C/audio-streaming) |
 
-## Repos (v0.4.0)
+---
 
-| Repo | Rol |
-|------|-----|
-| [audio-streaming-backend](https://github.com/B3RT1C/audio-streaming-backend) | API central + OpenAPI |
-| [audio-streaming-web](https://github.com/B3RT1C/audio-streaming-web) | Cliente web |
-| [audio-streaming](https://github.com/B3RT1C/audio-streaming) (este repo) | Documentación, roadmap y estado |
+## 📐 Arquitectura del Sistema
 
-## Documentación
+```mermaid
+graph TD
+    subgraph Clientes ["Clientes (Escritorio / Móvil)"]
+        Browser["Navegador Web / PWA (MediaSession)"]
+    end
 
-- [Arquitectura](./arquitectura.md) — base de v0.2.0 (back + web). El comportamiento vigente está en [RELEASE.md](./RELEASE.md)
-- [Versionado](./VERSIONING.md) — producto, tags, OpenAPI, Maven, npm, Flyway
-- [Notas de versión (actual)](./RELEASE.md) — siempre la release vigente; histórico en [`releases/`](./releases/)
-- [Roadmap](./roadmap.md) — plan desde v0.4.1 hasta 1.0 (desktop+sync) y después
-- [CI/CD con Jenkins](./jenkins-ci-cd.md) — histórico: Jenkins está parado
+    subgraph Red ["Acceso de Red"]
+        LAN["Red Local LAN (192.168.1.79:8088)"]
+        Tailscale["Red Segura Tailscale (100.91.0.24:8088)"]
+        Caddy["Reverse Proxy (Caddy :8088)"]
+    end
 
-## Cómo clonar el ecosistema
+    subgraph Servicios ["Servicios Locales (Mini PC)"]
+        Frontend["SPA Web Server (:8091)<br/>Angular 21 + config.json"]
+        Backend["API Spring Boot (:8090)<br/>Java 25 + OpenAPI"]
+        DB[(PostgreSQL 16<br/>WSL2 / Migraciones Flyway)]
+        Storage[("Almacenamiento Local<br/>uploads/songs/")]
+    end
 
-En local conviene tener los repos hermanos en la misma carpeta (workspace):
+    Browser --> LAN
+    Browser --> Tailscale
+    LAN --> Caddy
+    Tailscale --> Caddy
+
+    Caddy -- "/musica/*" --> Frontend
+    Caddy -- "/musica/audios*<br/>(strip /musica)" --> Backend
+    Frontend -. "config.json ({apiUrl: '/musica'})" .-> Browser
+    Backend --> DB
+    Backend --> Storage
+```
+
+---
+
+## 📊 Alcance y Estado por Versión
+
+| Versión | Estado | Novedades principales |
+| :---: | :---: | :--- |
+| **v0.1.0** | Completado | Base inicial de subida de ficheros, stream básico y listado. |
+| **v0.2.0** | Completado | Metadatos de biblioteca (artista, álbum), playlists y reproductor web. |
+| **v0.3.0** | Completado | Título secundario, artistas múltiples, etiquetas libres y autocompletado. |
+| **v0.4.0** | Completado | Etiquetas tipadas (`tag_types`), filtros combinados AND (`f`), orden aleatorio determinista (`seed`). |
+| **v0.5.0** *(Actual)* | **En producción** | Eventos de escucha (`play_events`), estadísticas históricas y timeline (`/stats/*`), stream HTTP con cabecera Range (códigos 206/416), integración bajo subpath `/musica/` con Caddy. |
+| **v1.0.0** | En diseño | Cliente desktop con sincronización offline local. |
+
+---
+
+## 📚 Documentación Técnica
+
+- **[Arquitectura](./arquitectura.md):** Fundamentos de diseño del backend, frontend y decisiones de desacoplamiento.
+- **[Contrato de API OpenAPI](https://github.com/B3RT1C/audio-streaming-backend/blob/main/docs/openapi.yaml):** Especificación OpenAPI 3.0 vigente.
+- **[Estrategia de Versionado](./VERSIONING.md):** Convenciones de versionado de producto, tags de git, artefactos Maven, npm y migraciones Flyway.
+- **[Notas de Versión](./RELEASE.md):** Detalle histórico de releases y cambios por versión.
+- **[Hoja de Ruta (Roadmap)](./roadmap.md):** Próximos pasos hacia la versión 1.0.0.
+- **[Histórico CI/CD Jenkins](./jenkins-ci-cd.md):** Diseño anterior del pipeline de integración continua.
+
+---
+
+## 💻 Entorno de Desarrollo Local
+
+Para trabajar en el ecosistema se recomienda organizar los repositorios en una misma carpeta:
 
 ```bash
-mkdir audio-streaming && cd audio-streaming
+mkdir audio-streaming-ws && cd audio-streaming-ws
 git clone https://github.com/B3RT1C/audio-streaming.git
 git clone https://github.com/B3RT1C/audio-streaming-backend.git
 git clone https://github.com/B3RT1C/audio-streaming-web.git
 ```
 
-```
-audio-streaming/                 ← carpeta local (no es un repo)
-├── audio-streaming/             → docs (este repo)
-├── audio-streaming-backend/     → API + OpenAPI
-└── audio-streaming-web/         → cliente web
-```
-
-## Arranque local
-
-PostgreSQL en `localhost:5432`. Por defecto la base es `music-streaming-db`, usuario y clave `postgres`. Eso es el defecto de desarrollo. La instalación de casa usa otra base (`audio_streaming`); en local se deja el defecto salvo que definas `DB_URL`.
+### 1. Backend (Spring Boot + Java 25)
+Requiere PostgreSQL en ejecución (por defecto `localhost:5432`, DB `music-streaming-db`, usuario/clave `postgres`):
 
 ```bash
-cd audio-streaming-backend && ./mvnw spring-boot:run
-# otra terminal
-cd audio-streaming-web && npm install && npm start
+cd audio-streaming-backend
+./mvnw spring-boot:run
 ```
+*API escuchando en `http://localhost:8080`.*
 
-- API: `http://localhost:8080`
-- Web: `http://localhost:4200` (en local pide la API en el puerto 8080 del mismo host)
-
-Variables del backend:
-
-| Variable | Default | Uso |
-|----------|---------|-----|
-| `DB_URL` | `jdbc:postgresql://localhost:5432/music-streaming-db` | JDBC |
-| `DB_USERNAME` | `postgres` | Usuario de la base |
-| `DB_PASSWORD` | `postgres` | Clave de la base |
-| `AUDIO_STORAGE_DIR` | vacío | Carpeta de los audios. Vacía: `uploads/songs/`. Definida: ruta absoluta |
-| `AUDIO_MAX_FILE_SIZE` | `500MB` | Tamaño máximo de un fichero |
-| `AUDIO_MAX_REQUEST_SIZE` | `510MB` | Tamaño máximo de la petición. Al menos `AUDIO_MAX_FILE_SIZE` |
-| `CORS_ALLOWED_ORIGINS` | `*` | Orígenes del navegador, separados por comas |
-| `AUDIO_IMPORT_DIR` | vacío | Carpeta base de `POST /admin/import`. Vacía: el endpoint responde `IMPORT_NOT_CONFIGURED` |
-
-La web lee `config.json` al abrir la página (`public/config.json` en desarrollo). `apiUrl` vacío, o un fichero ausente, dejan el mismo host en el puerto 8080. Para otro sitio:
-
-```json
-{
-  "apiUrl": "http://localhost:8080"
-}
+### 2. Frontend Web (Angular 21)
+```bash
+cd audio-streaming-web
+npm install
+npm start
 ```
+*Aplicación disponible en `http://localhost:4200`.*
 
-Más detalle: READMEs de [backend](https://github.com/B3RT1C/audio-streaming-backend) y [web](https://github.com/B3RT1C/audio-streaming-web).
+---
 
-## Estado actual (v0.4.0)
+## 🏠 Despliegue en Servidor Doméstico (Mini PC)
 
-Alcance cerrado en `main` de cada repo: **backend + web**.
-
-- [x] Backend (Spring Boot 4, Java 25): listar con `q` y filtros (`title`, `artist`, `tag`, `artistTag`, `playlistTag`, `shuffle` y `seed`), subir, editar metadata (incluido el título secundario), etiquetas, artistas, borrar, stream con Range (206/416), playlists con `q` y `tag`, y `POST /admin/import`
-- [x] Web (Angular 21): UI oscura tipo Spotify, biblioteca, búsqueda, filtros, botón Aleatorio, playlists, artistas, etiquetas, PWA y Media Session. `apiUrl` en `config.json` (por defecto, el mismo host en el puerto 8080)
-- [x] OpenAPI 0.4.0 en el backend
-- [x] Instalación de casa, manual y a petición (sin auto-update). Mini PC Windows, solo Tailscale y la LAN: API `:8090`, web `:8091`, Postgres en WSL (DB `audio_streaming`). En esa web, `config.json` apunta la API al puerto 8090
-
-Jenkins está parado: ya no hay staging automático. El diseño de aquel CI/CD se conserva en [jenkins-ci-cd.md](./jenkins-ci-cd.md) como histórico.
-
-Fuera de v0.4.0: ver [roadmap.md](./roadmap.md) (próximo foco: tags con tipo y filtro unificado, v0.4.1; **1.0** = desktop + sync).
+En el entorno de producción doméstico:
+- **Proxy inverso:** Caddy escucha en el puerto central `8088`.
+- **Ruta Web:** `http://<IP>:8088/musica/` enlazada a `127.0.0.1:8091`.
+- **Ruta API:** `http://<IP>:8088/musica/audios` dirigida a `127.0.0.1:8090`.
+- **Configuración dinámica:** `config.json` en el cliente establece `{"apiUrl": "/musica"}` para que todo el tráfico quede aislado y no colisione con otros servicios del host.
